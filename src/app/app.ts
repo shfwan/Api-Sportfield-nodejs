@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import { ErrorMiddleware } from "@/middleware/Error";
 import { HTTPException } from "hono/http-exception";
 import { publicRoute } from "@/routes/public.routes";
+import { serve } from "@hono/node-server";
 
 const app = new Hono().basePath("/api")
 
@@ -29,4 +30,9 @@ app.notFound(() => {
     throw new HTTPException(404, { message: "Not found" })
 })
 
-export default app
+const port = 3000
+
+serve({
+    fetch: app.fetch,
+    port
+})
