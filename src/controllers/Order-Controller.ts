@@ -1,7 +1,7 @@
-import { database } from "@/database/database";
-import { detailOrderTable, detailsLapanganTable, lapanganTable, ordersTable, profileInfoTable, userTable } from "@/database/schema/schema";
-import { OrderValidation } from "@/validation/order-validation";
-import { Validation } from "@/validation/validation";
+import { database } from "../database/database";
+import { detailOrderTable, detailsLapanganTable, lapanganTable, ordersTable, profileInfoTable, userTable } from "../database/schema/schema";
+import { OrderValidation } from "../validation/order-validation";
+import { Validation } from "../validation/validation";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";

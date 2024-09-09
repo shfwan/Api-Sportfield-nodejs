@@ -1,10 +1,10 @@
-import { database } from "@/database/database";
-import { profileInfoTable, userTable } from "@/database/schema/schema";
-import { ReadFileDirectory } from "@/libs/ReadFileDirectory";
-import type { RefreshToken, Token } from "@/model/auth-model";
-import type { Payload } from "@/model/auth-model";
-import { AuthValidation } from "@/validation/auth-validation"
-import { Validation } from "@/validation/validation";
+import { database } from "../database/database";
+import { profileInfoTable, userTable } from "../database/schema/schema";
+import { ReadFileDirectory } from "../libs/ReadFileDirectory";
+import type { RefreshToken, Token } from "../model/auth-model";
+import type { Payload } from "../model/auth-model";
+import { AuthValidation } from "../validation/auth-validation"
+import { Validation } from "../validation/validation";
 import { eq, getTableColumns, ilike, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";

@@ -1,8 +1,8 @@
-import AuthController from "@/controllers/Auth-Controller";
-import DetailLapanganController from "@/controllers/DetailLapangan-Controller";
-import GalleryController from "@/controllers/Gallery-Controller";
-import JamController from "@/controllers/Jam-Controller";
-import LapanganController from "@/controllers/Lapangan-Controller";
+import AuthController from "../controllers/Auth-Controller";
+import DetailLapanganController from "../controllers/DetailLapangan-Controller";
+import GalleryController from "../controllers/Gallery-Controller";
+import JamController from "../controllers/Jam-Controller";
+import LapanganController from "../controllers/Lapangan-Controller";
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 

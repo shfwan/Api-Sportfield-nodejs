@@ -1,5 +1,5 @@
-import { database } from "@/database/database"
-import { profileInfoTable } from "@/database/schema/schema"
+import { database } from "../database/database"
+import { profileInfoTable } from "../database/schema/schema"
 import { eq, getTableColumns } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"

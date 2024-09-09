@@ -1,7 +1,7 @@
-import { database } from "@/database/database";
-import { detailOrderTable, detailsLapanganTable } from "@/database/schema/schema";
-import { JamValidation } from "@/validation/jam-validation";
-import { Validation } from "@/validation/validation";
+import { database } from "../database/database";
+import { detailOrderTable, detailsLapanganTable } from "../database/schema/schema";
+import { JamValidation } from "../validation/jam-validation";
+import { Validation } from "../validation/validation";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";

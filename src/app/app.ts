@@ -1,28 +1,28 @@
-// import { privateRoute } from "@/routes/private.routes";
 import { Hono } from "hono";
-// import { logger } from "hono/logger";
-// import { cors } from "hono/cors";
-import { ErrorMiddleware } from "../middleware/Error";
+import { logger } from "hono/logger";
+import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-// import { publicRoute } from "@/routes/public.routes";
 import { serve } from "@hono/node-server";
+import { ErrorMiddleware } from "../middleware/Error";
+import { privateRoute } from "../routes/private.routes";
+import { publicRoute } from "../routes/public.routes";
 
 const app = new Hono().basePath("/api")
 
-// app.use('*', logger())
-// app.use('*', cors({
-//     origin: "*",
-//     allowHeaders: ['Content-Type', 'Authorization'],
-//     allowMethods: ['POST', 'GET', 'PATCH', 'DELETE'],
-//     exposeHeaders: ['Content-Length', 'X-Custom-Header'],
-//     maxAge: 600,
-//     credentials: true,
+app.use('*', logger())
+app.use('*', cors({
+    origin: "*",
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['POST', 'GET', 'PATCH', 'DELETE'],
+    exposeHeaders: ['Content-Length', 'X-Custom-Header'],
+    maxAge: 600,
+    credentials: true,
 
-// }))
+}))
 
 
-// app.route("/v2", privateRoute)
-// app.route("/v1", publicRoute)
+app.route("/v2", privateRoute)
+app.route("/v1", publicRoute)
 
 app.onError(ErrorMiddleware)
 

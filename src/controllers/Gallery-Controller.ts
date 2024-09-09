@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { and, eq } from "drizzle-orm";
-import { database } from "@/database/database";
-import { detailsLapanganTable, galleryTable } from "@/database/schema/schema";
+import { database } from "../database/database";
+import { detailsLapanganTable, galleryTable } from "../database/schema/schema";
 import { HTTPException } from "hono/http-exception";
 import fs from "fs"
 

@@ -1,13 +1,13 @@
 import { Hono } from "hono";
-import { Auth } from "@/middleware/Auth";
-import { Privilage } from "@/middleware/Privilage";
-import UserController from "@/controllers/User-Controller";
-import ProfilController from "@/controllers/Profil-Controller";
-import LapanganController from "@/controllers/Lapangan-Controller";
-import DetailLapanganController from "@/controllers/DetailLapangan-Controller";
-import JamController from "@/controllers/Jam-Controller";
-import GalleryController from "@/controllers/Gallery-Controller";
-import OrderController from "@/controllers/Order-Controller";
+import { Auth } from "../middleware/Auth";
+import { Privilage } from "../middleware/Privilage";
+import UserController from "../controllers/User-Controller";
+import ProfilController from "../controllers/Profil-Controller";
+import LapanganController from "../controllers/Lapangan-Controller";
+import DetailLapanganController from "../controllers/DetailLapangan-Controller";
+import JamController from "../controllers/Jam-Controller";
+import GalleryController from "../controllers/Gallery-Controller";
+import OrderController from "../controllers/Order-Controller";
 
 export const privateRoute = new Hono()
 

@@ -1,6 +1,6 @@
-import { database } from "@/database/database"
-import { detailsLapanganTable, lapanganTable, profileInfoTable, userTable } from "@/database/schema/schema"
-import { ReadFileDirectory } from "@/libs/ReadFileDirectory"
+import { database } from "../database/database"
+import { detailsLapanganTable, lapanganTable, profileInfoTable, userTable } from "../database/schema/schema"
+import { ReadFileDirectory } from "../libs/ReadFileDirectory"
 import { eq } from "drizzle-orm"
 import supertest from "supertest"
 
