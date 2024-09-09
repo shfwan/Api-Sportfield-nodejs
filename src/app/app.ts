@@ -2,7 +2,7 @@
 import { Hono } from "hono";
 // import { logger } from "hono/logger";
 // import { cors } from "hono/cors";
-import { ErrorMiddleware } from "@/middleware/Error";
+import { ErrorMiddleware } from "../middleware/Error";
 import { HTTPException } from "hono/http-exception";
 // import { publicRoute } from "@/routes/public.routes";
 import { serve } from "@hono/node-server";
