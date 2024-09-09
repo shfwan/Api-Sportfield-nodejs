@@ -16,7 +16,7 @@ class LapanganController {
         const { page, limit }: Query | any = context.req.query()
         
         const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
-        
+                
         
         const lapangan = await database.query.lapanganTable.findMany({
             where: or(
