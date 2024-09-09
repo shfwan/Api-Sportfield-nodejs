@@ -1,8 +1,8 @@
 import { database } from "../database/database"
-import { lapanganTable, type Address } from "../database/schema/schema"
+import { lapanganTable } from "../database/schema/schema"
 import { LapanganValidation } from "../validation/lapangan-validation"
 import { Validation } from "../validation/validation"
-import { and, eq, getTableColumns, ilike, like, or } from "drizzle-orm"
+import { and, eq, getTableColumns, ilike, or } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 
@@ -17,7 +17,7 @@ class LapanganController {
         
         const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
         
-
+        
         const lapangan = await database.query.lapanganTable.findMany({
             where: or(
                 ilike(lapanganTable.name, `%${context.req.query("value") || ""}%`)
@@ -31,6 +31,7 @@ class LapanganController {
                 updatedAt: false
             }
         })
+
         
         const totalItem = (await database.query.lapanganTable.findMany()).length
 

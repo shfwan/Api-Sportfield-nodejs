@@ -8,8 +8,8 @@ import { Validation } from "../validation/validation";
 import { eq, getTableColumns, ilike, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import jwt from "jsonwebtoken"
-
+import * as jwt from "jsonwebtoken"
+import * as bcrypt from "bcrypt"
 
 const generateToken = (payload: Payload) => {
     return jwt.sign(payload, process.env.TOKEN_SECRET as string, { expiresIn: "30m" })
@@ -30,7 +30,7 @@ class AuthController {
         }
 
         if (registerRequest.password !== registerRequest.confirmPassword) throw new HTTPException(400, { message: "Password not match" })
-        const passwordHash: string = await process.password.hash(registerRequest.password, { algorithm: 'bcrypt', cost: 4 })
+        const passwordHash: string = await bcrypt.hash(registerRequest.password, 10)
 
         const { role, ...omitRole } = getTableColumns(userTable)
         const randomImage = ReadFileDirectory("./public/images/upload")
@@ -80,7 +80,7 @@ class AuthController {
             throw new HTTPException(409, { message: "User not register" })
         }
 
-        const matchPassword = await process.password.verify(loginRequest.password, checkUserExists.password)
+        const matchPassword = await bcrypt.compare(loginRequest.password, checkUserExists.password)
 
         if (!matchPassword) {
             throw new HTTPException(409, { message: "User or password is incorrect" })

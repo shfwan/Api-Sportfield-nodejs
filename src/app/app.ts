@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { serve } from "@hono/node-server";
 import { ErrorMiddleware } from "../middleware/Error";
 import { privateRoute } from "../routes/private.routes";
 import { publicRoute } from "../routes/public.routes";
@@ -32,7 +31,4 @@ app.notFound(() => {
 
 const port = 3000
 
-serve({
-    fetch: app.fetch,
-    port
-})
+export default app

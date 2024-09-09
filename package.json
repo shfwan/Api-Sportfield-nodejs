@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.12.2",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
     "drizzle-orm": "^0.33.0",
     "hono": "^4.5.11",
     "jsonwebtoken": "^9.0.2",
