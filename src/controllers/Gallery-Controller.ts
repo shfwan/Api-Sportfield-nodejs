@@ -3,17 +3,15 @@ import { and, eq } from "drizzle-orm";
 import { database } from "../database/database";
 import { detailsLapanganTable, galleryTable } from "../database/schema/schema";
 import { HTTPException } from "hono/http-exception";
-import fs from "fs"
+import * as fs from "fs"
 
 class GalleryController {
 
     async list(context: Context) {
 
         const gallery = await database.query.galleryTable.findMany({
-            where: and(
-                eq(galleryTable.lapanganId, context.req.param("lapanganId") as any),
-                eq(galleryTable.detailsLapanganId, context.req.param("id") as any),
-            )
+            where: eq(galleryTable.lapanganId, context.req.param("lapanganId") as any)
+             
         })
 
         type Gallery = {
@@ -62,7 +60,7 @@ class GalleryController {
         const buffer = await file.arrayBuffer()
 
         try {
-            process.write(`./public/images/upload/${newFile.name}`, Buffer.from(buffer))
+            // Bun.write(`./public/images/upload/${newFile.name}`, Buffer.from(buffer))
         } catch (error) {
             throw new HTTPException(500, { message: "Failed upload" })
         }

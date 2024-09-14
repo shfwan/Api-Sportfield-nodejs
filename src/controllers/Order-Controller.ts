@@ -94,7 +94,7 @@ class OrderController {
 
         let shouldBreak = false;
         checkJamOrder.forEach((item) => {
-            if (compareJam(requestOrder.jam, item.jam)) {
+            if (compareJam(requestOrder.jam, item.jam as [])) {
                 throw new HTTPException(400, { message: "Jam sudah terbooking" })
                 shouldBreak = true;
             }

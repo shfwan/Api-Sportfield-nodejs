@@ -2,9 +2,10 @@ import { database } from "../database/database"
 import { detailsLapanganTable, lapanganTable } from "../database/schema/schema"
 import { DetailsLapanganValidation } from "../validation/lapangan-validation"
 import { Validation } from "../validation/validation"
-import { eq, getTableColumns } from "drizzle-orm"
+import { and, eq, getTableColumns } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
+
 
 class DetailsLapanganController {
     async getListDetailLapangan(context: Context) {
@@ -68,18 +69,36 @@ class DetailsLapanganController {
         const { lapanganId, id, ...omitId } = getTableColumns(detailsLapanganTable)
         const requestLapangan = Validation.validate(DetailsLapanganValidation.Update, await context.req.json())
 
-        const detailLapangan = await database.update(detailsLapanganTable).set(requestLapangan).where(eq(detailsLapanganTable.id, context.req.param("id") as any)).returning(omitId)
+        const detailLapangan = await database.update(detailsLapanganTable).set(requestLapangan).where(
+            and(
+                eq(detailsLapanganTable.id, context.req.param("id") as any),
+                eq(detailsLapanganTable.lapanganId, context.req.param("lapanganId") as any)
+            )
+        ).returning(omitId)
         if (detailLapangan.length < 1) throw new HTTPException(404, { message: "Lapangan not found" })
 
         return context.json({ message: "Success update lapangan", data: detailLapangan[0] }, 200)
     }
 
     async deleteDetailLapangan(context: Context) {        
-        const detailLapangan = await database.delete(detailsLapanganTable).where(eq(detailsLapanganTable.id, context.req.param("id") as any)).returning()
-        
+        const detailLapangan = await database.delete(detailsLapanganTable).where(
+            and(
+                eq(detailsLapanganTable.id, context.req.param("id") as any),
+                eq(detailsLapanganTable.lapanganId, context.req.param("lapanganId") as any)
+            )
+        ).returning()
+
         if (detailLapangan.length < 1) throw new HTTPException(404, { message: "Lapangan not found" })
 
         return context.json({ message: "Success remove lapangan", data: detailLapangan[0] }, 200)
+    }
+
+    async deleteAllDetailLapangan(context: Context) {
+        const detailLapangan = await database.delete(detailsLapanganTable).where(eq(detailsLapanganTable.lapanganId, context.req.param("id") as any)).returning()
+        
+        if (detailLapangan.length < 1) throw new HTTPException(404, { message: "Lapangan not found" })
+
+        return context.json({ message: "Success remove all lapangan", data: detailLapangan[0] }, 200)
     }
 
 }

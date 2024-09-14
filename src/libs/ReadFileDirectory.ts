@@ -1,4 +1,4 @@
-import fs from 'fs'
+import * as fs from 'fs'
 
 export const ReadFileDirectory = (dirPath: string) => {
     const img: string[] = []

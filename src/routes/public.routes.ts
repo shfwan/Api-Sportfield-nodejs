@@ -25,7 +25,7 @@ publicRoute.get("/lapangan/:id/list", DetailLapanganController.getListDetailLapa
 publicRoute.get("/lapangan/:id/information", DetailLapanganController.getDetailLapangan)
 
 //Gallery
-publicRoute.get("/lapangan/:lapanganId/information/:id/gallery", GalleryController.list)
+publicRoute.get("/lapangan/:lapanganId/gallery", GalleryController.list)
 publicRoute.get("/lapangan/picture/*", serveStatic({root:"./", rewriteRequestPath: (path) => path.replace("/api/v1/lapangan/picture/", "./public/images/upload/")}))
 
 

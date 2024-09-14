@@ -4,10 +4,6 @@ import app from './app/app'
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-const port = 3000
-console.log(`Server is running on port ${port}`)
+// console.log(`Server is running on port ${app.port}`)
 
-serve({
-  fetch: app.fetch,
-  port
-})
+// serve(app)

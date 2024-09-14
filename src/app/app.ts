@@ -5,6 +5,12 @@ import { HTTPException } from "hono/http-exception";
 import { ErrorMiddleware } from "../middleware/Error";
 import { privateRoute } from "../routes/private.routes";
 import { publicRoute } from "../routes/public.routes";
+import { Server, Socket } from "socket.io";
+import { serve } from '@hono/node-server'
+import { Server as HttpServer } from "http"
+import * as dotenv from 'dotenv'
+dotenv.config()
+
 
 const app = new Hono().basePath("/api")
 
@@ -19,6 +25,28 @@ app.use('*', cors({
 
 }))
 
+const server = serve({
+    port: 3001,
+    fetch: app.fetch
+}, (info) => {
+    console.log(`Server is running on port ${info.port}`)
+})
+
+const io = new Server(server as HttpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+
+    },
+})
+
+io.on("connection", (socket) => {
+    console.log(`User Connected: ${socket.id}`)
+
+    socket.on("send_message", (data) => {
+        socket.broadcast.emit("receive_message", data)
+    })
+})
 
 app.route("/v2", privateRoute)
 app.route("/v1", publicRoute)
@@ -29,6 +57,4 @@ app.notFound(() => {
     throw new HTTPException(404, { message: "Not found" })
 })
 
-const port = 3000
-
-export default app
+export default server

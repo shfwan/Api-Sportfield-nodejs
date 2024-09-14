@@ -8,5 +8,5 @@ export interface UpdateUser {
 
 export interface UpdatePassword {
     password: string,
-    retype_password: string
+    confirmPassword: string
 }

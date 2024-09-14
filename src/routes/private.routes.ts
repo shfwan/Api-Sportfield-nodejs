@@ -28,8 +28,9 @@ privateRoute.delete("/lapangan/:id", Auth, Privilage, LapanganController.deleteL
 
 //Detail Lapangan
 privateRoute.post("/lapangan/:id", Auth, Privilage, DetailLapanganController.createDetailLapangan)
-privateRoute.patch("/lapangan/:id/information", Auth, Privilage, DetailLapanganController.updateDetailLapangan)
-privateRoute.delete("/lapangan/:id/information", Auth, Privilage, DetailLapanganController.deleteDetailLapangan)
+privateRoute.patch("/lapangan/:lapanganId/information/:id", Auth, Privilage, DetailLapanganController.updateDetailLapangan)
+privateRoute.delete("/lapangan/:lapanganId/information/:id", Auth, Privilage, DetailLapanganController.deleteDetailLapangan)
+privateRoute.delete("/lapangan/:id/information/reset", Auth, Privilage, DetailLapanganController.deleteAllDetailLapangan)
 
 //Jam Lapangan
 privateRoute.patch("/lapangan/:lapanganId/information/:id/jam", Auth, Privilage, JamController.createJam)

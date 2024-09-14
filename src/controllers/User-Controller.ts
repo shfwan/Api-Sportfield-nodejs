@@ -6,6 +6,7 @@ import { profileInfoTable, userTable } from "../database/schema/schema"
 import type { UpdatePassword, UpdateUser } from "../model/user-model"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
+import * as bcrypt from 'bcrypt'
 
 class UserController {
 
@@ -24,7 +25,7 @@ class UserController {
 
         if (updateRequest.password !== updateRequest.confirmPassword) throw new HTTPException(400, { message: "Password not match" })
 
-        const passwordHash: string = await process.password.hash(updateRequest.password, { algorithm: 'bcrypt', cost: 4 })
+        const passwordHash: string = await bcrypt.hash(updateRequest.password, 10)
 
         await database.update(userTable).set({
             password: passwordHash,

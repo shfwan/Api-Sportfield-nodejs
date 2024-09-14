@@ -6,6 +6,7 @@ import { and, eq, getTableColumns, ilike, or } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 
+
 class LapanganController {
     async getLapangan(context: Context) {
         type Query = {
@@ -16,8 +17,8 @@ class LapanganController {
         const { page, limit }: Query | any = context.req.query()
         
         const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
-                
         
+
         const lapangan = await database.query.lapanganTable.findMany({
             where: or(
                 ilike(lapanganTable.name, `%${context.req.query("value") || ""}%`)
@@ -31,10 +32,8 @@ class LapanganController {
                 updatedAt: false
             }
         })
-
         
         const totalItem = (await database.query.lapanganTable.findMany()).length
-
                 
         const prevPage: boolean = skip > 1 ? true : false
         const nextPage: boolean = (page * limit) < totalItem
@@ -53,8 +52,13 @@ class LapanganController {
     }
 
     async getLapanganById(context: Context) {
+        console.log(context.req.query("userId"));
+        
         const lapangan = await database.query.lapanganTable.findFirst({
-            where: eq(lapanganTable.id, context.req.param("id")),
+            where: or(
+                eq(lapanganTable.id, context.req.param("id")),
+                eq(lapanganTable.userId, context.req.param("id"))
+            ),
             columns: {
                 userId: false,
             },

@@ -62,7 +62,7 @@ class ProfilController {
             const buffer = await file.arrayBuffer()
     
             try {
-                process.write(`./public/images/upload/${newFile.name}`, Buffer.from(buffer))
+                // process.write(`./public/images/upload/${newFile.name}`, Buffer.from(buffer))
             } catch (error) {
                 throw new HTTPException(500, { message: "Failed upload" })
             }

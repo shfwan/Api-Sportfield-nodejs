@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import jwt from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
 
 export const Auth: MiddlewareHandler = async (context, next) => {
     if(!context.req.header("Authorization")) throw new HTTPException(401, {message: "Unauthorized"})
