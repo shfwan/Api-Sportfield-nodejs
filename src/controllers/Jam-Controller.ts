@@ -2,7 +2,7 @@ import { database } from "../database/database";
 import { detailOrderTable, detailsLapanganTable } from "../database/schema/schema";
 import { JamValidation } from "../validation/jam-validation";
 import { Validation } from "../validation/validation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
@@ -10,13 +10,13 @@ class JamController {
 
     async getJam(context: Context) {
 
-
         const lapangan = await database.query.detailsLapanganTable.findFirst({
             where: and(
                 eq(detailsLapanganTable.lapanganId, context.req.param("lapanganId") as any),
                 eq(detailsLapanganTable.id, context.req.param("id") as any)
             )
         })
+        
         if (!lapangan) throw new HTTPException(404, { message: "Lapangan not found" })
 
         const data = await database.query.detailsLapanganTable.findFirst({
@@ -33,18 +33,26 @@ class JamController {
 
         const { day, month, year } = context.req.query()
         const date = new Date()
-        const tomorrow = new Date(`${month}/${day}/${year}`)
+        const tomorrow = new Date(`${month}/${day}/${year}`)        
 
         const order = await database.query.detailOrderTable.findMany({
-            where: and(
+            where: or(
                 eq(detailOrderTable.detailsLapanganId, context.req.param("id") as any),
-                eq(detailOrderTable.date, tomorrow.toLocaleDateString())
+                eq(detailOrderTable.date, tomorrow.toJSON().split("T")[0])
             ),
             columns: {
                 jam: true,
-                date: true
+                date: true,
+            },
+            with: {
+                orders: {
+                    columns: {
+                        statusPembayaran: true
+                    }
+                }
             }
         })
+        
         if (!order) throw new HTTPException(404, { message: "Lapangan not found" })
 
         type Jam = {
@@ -66,12 +74,15 @@ class JamController {
                 values.isAvailable = false
             }
 
-            // Pengecekan jadwal yang sudah terbooking
+            // Pengecekan jadwal yang sudah terbooking            
             order.map((item) => {
+                
                 item.jam?.map((v) => {
                     if (new Date(item.date).getDate() == tomorrow.getDate()) {
                         if (values.id == v?.id) {
-                            values.isAvailable = false
+                            if(item.orders.statusPembayaran) {
+                                values.isAvailable = false
+                            }
                         }
                     }
                 })

@@ -40,11 +40,15 @@ const io = new Server(server as HttpServer, {
     },
 })
 
-io.on("connection", (socket) => {
-    console.log(`User Connected: ${socket.id}`)
 
-    socket.on("send_message", (data) => {
-        socket.broadcast.emit("receive_message", data)
+io.on("connection", (socket) => {
+
+    socket.on("send_refreshLapanganTersedia", (data) => {
+        socket.broadcast.emit("receive_refreshLapanganTersedia")
+    })
+
+    socket.on("send_checkout", (data) => {
+        socket.broadcast.emit("receive_checkout")
     })
 })
 
@@ -57,4 +61,4 @@ app.notFound(() => {
     throw new HTTPException(404, { message: "Not found" })
 })
 
-export default server
+export default serve

@@ -23,6 +23,8 @@ publicRoute.get("/lapangan/list", DetailLapanganController.getListDetailLapangan
 //Detail lapangan
 publicRoute.get("/lapangan/:id/list", DetailLapanganController.getListDetailLapangan)
 publicRoute.get("/lapangan/:id/information", DetailLapanganController.getDetailLapangan)
+// publicRoute.get("/lapangan/:lapanganId/information/:id", DetailLapanganController.getDetailLapangan)
+
 
 //Gallery
 publicRoute.get("/lapangan/:lapanganId/gallery", GalleryController.list)

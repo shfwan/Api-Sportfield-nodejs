@@ -12,6 +12,8 @@ import OrderController from "../controllers/Order-Controller";
 export const privateRoute = new Hono()
 
 
+
+
 //User
 privateRoute.patch("/user", Auth, UserController.updateUser)
 privateRoute.patch("/user/password", Auth, UserController.updatePassword)
@@ -44,7 +46,13 @@ privateRoute.delete("/lapangan/:lapanganId/information/:id/gallery/remove", Auth
 //User Order
 privateRoute.get("/order", Auth, OrderController.List)
 privateRoute.get("/order/:id", Auth, OrderController.Detail)
+privateRoute.get("/order/:id/stat", Auth, OrderController.Stat)
+
 privateRoute.post("/order/lapangan/:lapanganId/information/:id/checkout", Auth, OrderController.Checkout)
-privateRoute.patch("/order/lapangan/:lapanganId/information/:id/play",Auth, OrderController.UpdateOrderPlay)
+privateRoute.post("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.Pembayaran)
+
+privateRoute.patch("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.UpdateStatusPembayaran)
+privateRoute.patch("/order/lapangan/:lapanganId/information/:id/play", Auth, OrderController.UpdateOrderPlay)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/end", Auth, OrderController.UpdateOrderEnd)
+
 privateRoute.delete("/order/:id", Auth, OrderController.DeleteOrder)

@@ -9,6 +9,7 @@ export class AuthValidation {
         phone: z.string().min(1).max(15),
         password: z.string().min(8, "Password length must 8 character"),
         confirmPassword: z.string().min(1, "Password length must 8 character"),
+        role: z.string().default("customer")
     }).refine((data) => data.password === data.confirmPassword, {
         message: "Password not match",
         path: ["confirmPassword"]

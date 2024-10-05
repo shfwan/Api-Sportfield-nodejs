@@ -34,7 +34,9 @@ export class DetailsLapanganValidation {
         description: z.string().optional(),
         statusLapangan: z.string().min(1),
         type: z.string().min(1),
-        price: z.number().min(10000)
+        price: z.number().min(10000),
+        open: z.string().min(1),
+        close: z.string().min(1),
     })
     
     static readonly Update: ZodType = z.object({
@@ -42,6 +44,8 @@ export class DetailsLapanganValidation {
         description: z.string().optional(),
         statusLapangan: z.string().optional(),
         type: z.string().optional(),
-        price: z.number().min(10000)
+        price: z.number().min(10000),
+        open: z.string().min(1).optional(),
+        close: z.string().min(1).optional()
     })
 }

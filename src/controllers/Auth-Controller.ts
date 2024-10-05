@@ -1,5 +1,5 @@
 import { database } from "../database/database";
-import { profileInfoTable, userTable } from "../database/schema/schema";
+import { lapanganTable, profileInfoTable, userTable } from "../database/schema/schema";
 import { ReadFileDirectory } from "../libs/ReadFileDirectory";
 import type { RefreshToken, Token } from "../model/auth-model";
 import type { Payload } from "../model/auth-model";
@@ -10,6 +10,7 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import * as jwt from "jsonwebtoken"
 import * as bcrypt from "bcrypt"
+
 
 const generateToken = (payload: Payload) => {
     return jwt.sign(payload, process.env.TOKEN_SECRET as string, { expiresIn: "30m" })
@@ -35,6 +36,7 @@ class AuthController {
         const { role, ...omitRole } = getTableColumns(userTable)
         const randomImage = ReadFileDirectory("./public/images/upload")
 
+        const roleType: string = atob(registerRequest.role)
         const user = await database.transaction(async (database) => {
             const result = await database.insert(userTable).values({
                 firstname: registerRequest.firstname,
@@ -42,6 +44,7 @@ class AuthController {
                 email: registerRequest.email,
                 phone: registerRequest.phone,
                 password: passwordHash,
+                role: roleType as any
             }).returning(omitRole)
 
             await database.insert(profileInfoTable).values({
@@ -62,7 +65,7 @@ class AuthController {
         const loginRequest = Validation.validate(AuthValidation.Login, await context.req.json())
 
         const checkUserExists = await database.query.userTable.findFirst(
-            { 
+            {
                 where: or(
                     ilike(userTable.email, loginRequest.user),
                     eq(userTable.phone, loginRequest.user)
@@ -93,23 +96,46 @@ class AuthController {
         const token = await generateToken(payload)
         const refreshToken = await generateRefreshToken(payload)
 
-        return context.json(
-            {
-                message: "Success login",
-                data: {
-                    fullname: checkUserExists.firstname + " " + checkUserExists.lastname,
-                    picture: checkUserExists.profileInfo?.picture,
-                    token: token,
-                    refreshToken: refreshToken,
-                }
-            }, 200)
+        if (checkUserExists.role === "customer") {
+            return context.json(
+                {
+                    message: "Success login",
+                    data: {
+                        fullname: checkUserExists.firstname + " " + checkUserExists.lastname,
+                        picture: checkUserExists.profileInfo?.picture,
+                        token: token,
+                        refreshToken: refreshToken,
+                    }
+                }, 200)
+        } else if (checkUserExists.role === "provider") {
+            const findLapanganByUser = await database.query.lapanganTable.findFirst({
+                where: eq(lapanganTable.userId, checkUserExists.id)
+            })
+            
+            return context.json(
+                {
+                    message: "Success login",
+                    data: {
+                        fullname: checkUserExists.firstname + " " + checkUserExists.lastname,
+                        picture: checkUserExists.profileInfo?.picture,
+                        lapanganId: findLapanganByUser?.id || "",
+                        token: token,
+                        refreshToken: refreshToken,
+                    }
+                }, 200)
+        } else {
+            return context.json(
+                {
+                    message: "User not register",
+                }, 409)
+        }
     }
 
     async refreshToken(context: Context) {
 
         const refreshTokenRequest = Validation.validate(AuthValidation.RefreshToken, await context.req.json())
 
-        const decodedToken: Token | any = await jwt.verify(refreshTokenRequest.refreshToken, process.env.REFRESH_TOKEN_SECRET as string)
+        const decodedToken: Token | any =  jwt.verify(refreshTokenRequest.refreshToken, process.env.REFRESH_TOKEN_SECRET as string)
 
         if (!decodedToken) {
             throw new HTTPException(401, { message: "Invalid refresh token" })

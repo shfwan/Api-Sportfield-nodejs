@@ -3,7 +3,7 @@ import { string, z, ZodType } from "zod";
 export class OrderValidation {
     static readonly Checkout: ZodType = z.object({
         detailLapanganId: z.number().min(1),
-        date: z.string().min(1),
+        date: z.number().min(1),
         jam: z.array(z.object(
             {
                 id: z.number().min(1),

@@ -1,6 +1,6 @@
 import { database } from "../database/database"
 import { profileInfoTable } from "../database/schema/schema"
-import { eq, getTableColumns } from "drizzle-orm"
+import { eq, getTableColumns, or } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 
@@ -8,7 +8,7 @@ class ProfilController {
     async getProfil(context: Context) {
 
         const user = await database.query.profileInfoTable.findFirst({
-            where: eq(profileInfoTable.userId, await context.get("jwt").id),
+            where: context.req.query("id") !== undefined ? eq(profileInfoTable.userId, await context.req.query("id") as any) : eq(profileInfoTable.userId, await context.get("jwt").id),
             with: {
                 user: {
                     columns: {

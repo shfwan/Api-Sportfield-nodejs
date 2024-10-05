@@ -1,5 +1,5 @@
 import { database } from "../database/database"
-import { lapanganTable } from "../database/schema/schema"
+import { detailsLapanganTable, lapanganTable } from "../database/schema/schema"
 import { LapanganValidation } from "../validation/lapangan-validation"
 import { Validation } from "../validation/validation"
 import { and, eq, getTableColumns, ilike, or } from "drizzle-orm"
@@ -9,16 +9,17 @@ import { HTTPException } from "hono/http-exception"
 
 class LapanganController {
     async getLapangan(context: Context) {
+        
         type Query = {
             page: number,
             limit: number
         }
-
-        const { page, limit }: Query | any = context.req.query()
         
+        const { page, limit }: Query | any = context.req.query()
+
         const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
         
-
+        
         const lapangan = await database.query.lapanganTable.findMany({
             where: or(
                 ilike(lapanganTable.name, `%${context.req.query("value") || ""}%`)
@@ -43,7 +44,7 @@ class LapanganController {
             data: {
                 count: totalItem,
                 page: +page || 1,
-                totalPage: Math.ceil(totalItem / (limit || 10)),
+                totalPage: Math.ceil(totalItem / (limit || 10)) || 0,
                 prevPage: prevPage,
                 nextPage: nextPage,
                 lapangan: lapangan
@@ -52,7 +53,6 @@ class LapanganController {
     }
 
     async getLapanganById(context: Context) {
-        console.log(context.req.query("userId"));
         
         const lapangan = await database.query.lapanganTable.findFirst({
             where: or(
@@ -71,6 +71,10 @@ class LapanganController {
 
     async createLapangan(context: Context) {
         const requestLapangan = Validation.validate(LapanganValidation.Create, await context.req.json())
+
+        requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
+        requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
+        
         const { userId, ...omitId } = getTableColumns(lapanganTable)
 
         const lapangan = await database.insert(lapanganTable).values({
@@ -92,6 +96,10 @@ class LapanganController {
     async updateLapangan(context: Context) {
         const { userId, ...user_id } = getTableColumns(lapanganTable)
         const requestLapangan = Validation.validate(LapanganValidation.Update, await context.req.json())
+
+        requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
+        requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
+        
 
         if (context.req.param("id").length < 36) {
             throw new HTTPException(400, { message: "Invalid id" })
@@ -117,20 +125,44 @@ class LapanganController {
             throw new HTTPException(400, { message: "Invalid id" })
         }
 
-        const lapangan = await database.delete(lapanganTable).where(
-            and(
+        const findLapangan = await database.query.lapanganTable.findFirst({
+            where: and(
                 eq(lapanganTable.userId, context.get("jwt").id),
                 eq(lapanganTable.id, context.req.param("id"))
-            )
-        ).returning()
+            ),
+            with: {
+                detailsLapangan: true
+            }
+        })
 
-        if (lapangan.length < 1) {
-            throw new HTTPException(404, { message: "Lapangan not found" })
-        }
+        const deleteLapangan = await database.transaction(async () => {
+            
+            if(findLapangan?.detailsLapangan.length! > 0) {
+
+                const lapanganTersedia = await database.delete(detailsLapanganTable).where(
+                    eq(detailsLapanganTable.lapanganId, context.req.param("id")),
+                )
+    
+                if (lapanganTersedia.length < 1) {
+                    throw new HTTPException(404, { message: "Lapangan not found" })
+                }
+            }
+
+            const lapangan = await database.delete(lapanganTable).where(
+                and(
+                    eq(lapanganTable.userId, context.get("jwt").id),
+                    eq(lapanganTable.id, context.req.param("id"))
+                )
+            ).returning()
+    
+            if (lapangan.length < 1) {
+                throw new HTTPException(404, { message: "Lapangan not found" })
+            }
+        })
 
         return context.json({
             message: "Success delete lapangan",
-            data: lapangan[0]
+            data: deleteLapangan
         }, 200)
     }
 }

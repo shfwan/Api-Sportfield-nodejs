@@ -58,6 +58,7 @@ export const lapanganRelations = relations(lapanganTable, ({ one, many }) => ({
         fields: [lapanganTable.userId],
         references: [userTable.id]
     }),
+    orders: many(ordersTable),
     detailsLapangan: many(detailsLapanganTable),
 }))
 
@@ -107,8 +108,10 @@ export const galleryTableRelations = relations(galleryTable, ({ one }) => ({
 export const ordersTable = pgTable("orders", {
     id: uuid("id").defaultRandom().primaryKey(),
     userId: uuid("user_id").notNull().references(() => userTable.id).references(() => userTable.id),
+    lapanganId: uuid("lapangan_id").notNull().references(() => lapanganTable.id),
     playStatus: boolean("play_status").default(false).notNull(),
     orderStatus: boolean("order_status").default(true).notNull(),
+    statusPembayaran: boolean("status_pembayaran").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow(),
 })
@@ -117,6 +120,10 @@ export const orderRelations = relations(ordersTable, ({ one }) => ({
     user: one(userTable, {
         fields: [ordersTable.userId],
         references: [userTable.id]
+    }),
+    lapangan: one(lapanganTable, {
+        fields: [ordersTable.lapanganId],
+        references: [lapanganTable.id]
     }),
     detailOrder: one(detailOrderTable)
 }))
@@ -140,4 +147,7 @@ export const detailOrderRelations = relations(detailOrderTable, ({ one }) => ({
     })
 }))
 
-
+export const notification = pgTable("notification", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    
+})

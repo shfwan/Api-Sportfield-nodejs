@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.12.2",
+    "@types/amqplib": "^0.10.5",
     "@types/bcrypt": "^5.0.2",
+    "amqplib": "^0.10.4",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.33.0",
