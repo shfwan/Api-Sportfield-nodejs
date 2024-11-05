@@ -24,7 +24,12 @@ class AuthController {
     async register(context: Context) {
         const registerRequest = Validation.validate(AuthValidation.Register, await context.req.json())
 
-        const checkUserExists = await database.query.userTable.findFirst({ where: eq(userTable.email, registerRequest.email) })
+        const checkUserExists = await database.query.userTable.findFirst({
+            where: or(
+                ilike(userTable.email, `%${registerRequest.email}%`),
+                eq(userTable.phone, registerRequest.phone)
+            )
+        })
 
         if (checkUserExists !== undefined) {
             throw new HTTPException(409, { message: "User already exists" })
@@ -111,7 +116,7 @@ class AuthController {
             const findLapanganByUser = await database.query.lapanganTable.findFirst({
                 where: eq(lapanganTable.userId, checkUserExists.id)
             })
-            
+
             return context.json(
                 {
                     message: "Success login",
@@ -135,7 +140,7 @@ class AuthController {
 
         const refreshTokenRequest = Validation.validate(AuthValidation.RefreshToken, await context.req.json())
 
-        const decodedToken: Token | any =  jwt.verify(refreshTokenRequest.refreshToken, process.env.REFRESH_TOKEN_SECRET as string)
+        const decodedToken: Token | any = jwt.verify(refreshTokenRequest.refreshToken, process.env.REFRESH_TOKEN_SECRET as string)
 
         if (!decodedToken) {
             throw new HTTPException(401, { message: "Invalid refresh token" })

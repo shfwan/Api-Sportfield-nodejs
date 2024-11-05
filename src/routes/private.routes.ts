@@ -8,11 +8,9 @@ import DetailLapanganController from "../controllers/DetailLapangan-Controller";
 import JamController from "../controllers/Jam-Controller";
 import GalleryController from "../controllers/Gallery-Controller";
 import OrderController from "../controllers/Order-Controller";
+import NotificationController from "../controllers/NotificationController";
 
 export const privateRoute = new Hono()
-
-
-
 
 //User
 privateRoute.patch("/user", Auth, UserController.updateUser)
@@ -22,6 +20,9 @@ privateRoute.delete("/user/delete", Auth, UserController.deleteUser)
 //User Profile
 privateRoute.get("/user/information", Auth, ProfilController.getProfil)
 privateRoute.patch("/user/information", Auth, ProfilController.updateProfil)
+
+//Notif
+privateRoute.get("/notification", Auth, NotificationController.getNotifcation)
 
 //Lapangan
 privateRoute.post("/lapangan", Auth, Privilage, LapanganController.createLapangan)
@@ -40,17 +41,19 @@ privateRoute.patch("/lapangan/:lapanganId/information/:id/jam/remove", Auth, Pri
 privateRoute.patch("/lapangan/:lapanganId/information/:id/jam/reset", Auth, Privilage, JamController.ResetJam)
 
 //Gallery Lapangan
-privateRoute.post("/lapangan/:lapanganId/information/:id/gallery", Auth, Privilage, GalleryController.store)
+privateRoute.post("/lapangan/:lapanganId/gallery", Auth, Privilage, GalleryController.store)
 privateRoute.delete("/lapangan/:lapanganId/information/:id/gallery/remove", Auth, Privilage, GalleryController.deleteGallery)
 
-//User Order
+//Order
 privateRoute.get("/order", Auth, OrderController.List)
 privateRoute.get("/order/:id", Auth, OrderController.Detail)
 privateRoute.get("/order/:id/stat", Auth, OrderController.Stat)
+privateRoute.get("/order/:id/history", Auth, OrderController.History)
 
 privateRoute.post("/order/lapangan/:lapanganId/information/:id/checkout", Auth, OrderController.Checkout)
 privateRoute.post("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.Pembayaran)
 
+privateRoute.patch("/order/lapangan/:lapanganId/information/:id/cancel", Auth, OrderController.UpdateOrderCancel)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.UpdateStatusPembayaran)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/play", Auth, OrderController.UpdateOrderPlay)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/end", Auth, OrderController.UpdateOrderEnd)

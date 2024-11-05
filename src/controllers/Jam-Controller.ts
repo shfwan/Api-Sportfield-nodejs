@@ -5,7 +5,7 @@ import { Validation } from "../validation/validation";
 import { and, eq, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-
+    
 class JamController {
 
     async getJam(context: Context) {
@@ -31,9 +31,9 @@ class JamController {
             },
         })
 
-        const { day, month, year } = context.req.query()
-        const date = new Date()
-        const tomorrow = new Date(`${month}/${day}/${year}`)        
+        const { date } = context.req.query()
+        const tanggal = new Date()
+        const tomorrow = new Date(date)
 
         const order = await database.query.detailOrderTable.findMany({
             where: or(
@@ -66,9 +66,9 @@ class JamController {
         const available = jam.map((values) => {
 
             // Pengecekan jadwal
-            if (date.getDate() == tomorrow.getDate() && date.getHours() >= parseInt(values.open.split(":")[0])) { //Sesuai hari dan jam
+            if (tanggal.getDate() == tomorrow.getDate() && tanggal.getHours() >= parseInt(values.open.split(":")[0])) { //Sesuai hari dan jam
                 values.isAvailable = false
-            } else if (tomorrow.getDate() >= date.getDate()) { //Sesuai hari
+            } else if (tomorrow.getDate() >= tanggal.getDate()) { //Sesuai hari
                 values.isAvailable = true
             } else {
                 values.isAvailable = false

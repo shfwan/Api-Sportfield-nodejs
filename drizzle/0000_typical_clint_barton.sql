@@ -1,4 +1,10 @@
 DO $$ BEGIN
+ CREATE TYPE "public"."title" AS ENUM('info', 'warning', 'error', 'success', 'default');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  CREATE TYPE "public"."role" AS ENUM('customer', 'provider', 'administrator');
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -22,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "details_lapangan" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(256) NOT NULL,
 	"type" varchar(256) NOT NULL,
+	"picture" varchar DEFAULT '' NOT NULL,
 	"statusLapangan" "statusLapangan" DEFAULT 'Indoor' NOT NULL,
 	"description" text DEFAULT '',
 	"price" serial NOT NULL,
@@ -30,9 +37,8 @@ CREATE TABLE IF NOT EXISTS "details_lapangan" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "gallery" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"lapangan_id" uuid NOT NULL,
-	"details_lapangan_id" integer NOT NULL,
 	"filename" varchar(256) NOT NULL,
 	"mime_type" varchar(256) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
@@ -41,15 +47,23 @@ CREATE TABLE IF NOT EXISTS "gallery" (
 CREATE TABLE IF NOT EXISTS "lapangan" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(256) NOT NULL,
-	"picture" text DEFAULT '',
+	"picture" varchar DEFAULT '' NOT NULL,
 	"description" text DEFAULT '',
-	"address" json NOT NULL,
-	"liked" integer DEFAULT 0 NOT NULL,
+	"alamat" varchar(512) NOT NULL,
+	"mapUrl" varchar,
 	"open" text NOT NULL,
 	"close" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now(),
 	"user_id" uuid NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "notificationT" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"title" "title" DEFAULT 'info' NOT NULL,
+	"description" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "orders" (
@@ -59,6 +73,7 @@ CREATE TABLE IF NOT EXISTS "orders" (
 	"play_status" boolean DEFAULT false NOT NULL,
 	"order_status" boolean DEFAULT true NOT NULL,
 	"status_pembayaran" boolean DEFAULT false NOT NULL,
+	"date" date NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now()
 );
@@ -66,7 +81,7 @@ CREATE TABLE IF NOT EXISTS "orders" (
 CREATE TABLE IF NOT EXISTS "profile_info" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"picture" text,
-	"bio" varchar(256) NOT NULL,
+	"bio" varchar(512) DEFAULT '',
 	"user_id" uuid NOT NULL
 );
 --> statement-breakpoint
@@ -109,13 +124,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "gallery" ADD CONSTRAINT "gallery_details_lapangan_id_details_lapangan_id_fk" FOREIGN KEY ("details_lapangan_id") REFERENCES "public"."details_lapangan"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "lapangan" ADD CONSTRAINT "lapangan_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "lapangan" ADD CONSTRAINT "lapangan_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "notificationT" ADD CONSTRAINT "notificationT_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

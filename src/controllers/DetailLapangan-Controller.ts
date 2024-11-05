@@ -5,6 +5,7 @@ import { Validation } from "../validation/validation"
 import { and, eq, getTableColumns } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
+import * as fs from "fs"
 
 
 class DetailsLapanganController {
@@ -34,18 +35,20 @@ class DetailsLapanganController {
         return context.json({ message: "Success get detail lapangan", data: detailLapangan }, 200)
     }
 
-    // async getDetailLapanganTersedia(context: Context) {
-    //     const findLapanganTersedia = await database.query.deta
-    // }
-
     async createDetailLapangan(context: Context) {
 
         const { lapanganId, ...omitId } = getTableColumns(detailsLapanganTable)
-        const requestLapangan = Validation.validate(DetailsLapanganValidation.Create, await context.req.json())
-        
-        requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
-        requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
-                
+        const body: any = await context.req.parseBody()
+        body.price = parseInt(body.price)
+
+        const requestLapangan: any = Validation.validate(DetailsLapanganValidation.Create, body)
+
+        const openSplit: any = requestLapangan.open
+        const closeSplit: any = requestLapangan.close
+
+        requestLapangan.open = openSplit.split(":")[0] + ":" + "00"
+        requestLapangan.close = closeSplit.split(":")[0] + ":" + "00"
+
         if (context.req.param("id").length < 36) {
             throw new HTTPException(400, { message: "Invalid id" })
         }
@@ -56,6 +59,7 @@ class DetailsLapanganController {
 
         if (!findLapangan) throw new HTTPException(404, { message: "Lapangan not found" })
 
+        // check jam
         type Jam = {
             id: number
             open: string;
@@ -66,7 +70,7 @@ class DetailsLapanganController {
         let lenghtJam = 0
         let checkJam = "today"
 
-        if(requestLapangan.open === requestLapangan.close) {
+        if (requestLapangan.open === requestLapangan.close) {
             throw new HTTPException(400, { message: "Jam tidak boleh sama" })
         }
 
@@ -109,14 +113,47 @@ class DetailsLapanganController {
             }
         }
 
+        // check File
+        const data = await context.req.parseBody()
+        const file = data['picture'] as File
+
+
+        if (file) {
+            const newFile = { ...file, name: `${new Date().getTime()}.${file.type.split("/")[1]}` } as File
+
+            const SIZE = 5 * 1024 * 1024
+            const FILETYPE = /png|jpeg|jpg/
+
+            if (!FILETYPE.test(file.type)) {
+                throw new HTTPException(400, { message: "Invalid file, image only" })
+            }
+
+            if (file.size > SIZE) {
+                throw new HTTPException(400, { message: "File to large" })
+            }
+
+            const buffer = await file.arrayBuffer()
+            requestLapangan.picture = newFile.name
+
+            fs.writeFile(`./public/images/upload/${newFile.name}`, Buffer.from(buffer), (err) => {
+                if (err) {
+                    throw new HTTPException(500, { message: "Failed upload" })
+                } else {
+                    requestLapangan.picture = newFile.name
+                }
+            })
+        }
+
         const detailLapangan = await database.insert(detailsLapanganTable).values({
             name: requestLapangan.name,
+            picture: requestLapangan.picture,
             description: requestLapangan.description,
             statusLapangan: requestLapangan.statusLapangan,
             type: requestLapangan.type,
             price: requestLapangan.price,
             jam: jam,
             lapanganId: context.req.param("id"),
+
         }).returning(omitId)
 
         if (!detailLapangan) throw new HTTPException(500, { message: "Failed add lapangan" })
@@ -127,13 +164,15 @@ class DetailsLapanganController {
     async updateDetailLapangan(context: Context) {
 
         const { lapanganId, id, ...omitId } = getTableColumns(detailsLapanganTable)
-        const requestLapangan = Validation.validate(DetailsLapanganValidation.Update, await context.req.json())
+        const body: any = await context.req.parseBody()
+        body.price = parseInt(body.price)
+
+        
+
+        const requestLapangan = Validation.validate(DetailsLapanganValidation.Update, body)
 
         requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
         requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
-        
-        console.log(requestLapangan);
-        
 
         type Jam = {
             id: number
@@ -145,7 +184,7 @@ class DetailsLapanganController {
         let lenghtJam = 0
         let checkJam = "today"
 
-        if(requestLapangan.open === requestLapangan.close) {
+        if (requestLapangan.open === requestLapangan.close) {
             throw new HTTPException(400, { message: "Jam tidak boleh sama" })
         }
 
@@ -188,9 +227,40 @@ class DetailsLapanganController {
             }
         }
 
-        const body = { ...requestLapangan, jam: jam }
-        
-        const detailLapangan = await database.update(detailsLapanganTable).set(body).where(
+        // check File
+        const data = await context.req.parseBody()
+        const file = data['picture'] as File
+
+
+        if (file) {
+            const newFile = { ...file, name: `${new Date().getTime()}.${file.type.split("/")[1]}` } as File
+
+            const SIZE = 5 * 1024 * 1024
+            const FILETYPE = /png|jpeg|jpg/
+
+            if (!FILETYPE.test(file.type)) {
+                throw new HTTPException(400, { message: "Invalid file, image only" })
+            }
+
+            if (file.size > SIZE) {
+                throw new HTTPException(400, { message: "File to large" })
+            }
+
+            const buffer = await file.arrayBuffer()
+            requestLapangan.picture = newFile.name
+
+            fs.writeFile(`./public/images/upload/${newFile.name}`, Buffer.from(buffer), (err) => {
+                if (err) {
+                    throw new HTTPException(500, { message: "Failed upload" })
+                } else {
+                    requestLapangan.picture = newFile.name
+                }
+            })
+        }
+
+        const newData = { ...requestLapangan, jam: jam }
+
+        const detailLapangan = await database.update(detailsLapanganTable).set(newData).where(
             and(
                 eq(detailsLapanganTable.id, context.req.param("id") as any),
                 eq(detailsLapanganTable.lapanganId, context.req.param("lapanganId") as any)

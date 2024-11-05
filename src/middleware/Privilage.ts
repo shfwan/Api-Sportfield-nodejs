@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "hono"
 import { HTTPException } from "hono/http-exception"
 
 export const Privilage: MiddlewareHandler = async (context, next) => {
-    try {
+    try {        
         const role = await context.get("jwt").role
 
         if (role != "administrator" && role != "provider") {

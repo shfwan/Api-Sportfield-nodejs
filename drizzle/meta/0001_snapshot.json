@@ -1,6 +1,6 @@
 {
-  "id": "16e39d1a-5b39-44c7-9ec7-c7859d2a21d5",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "106fc36f-2317-4271-bf98-dab5f5054dab",
+  "prevId": "16e39d1a-5b39-44c7-9ec7-c7859d2a21d5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -307,8 +307,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.notificationT": {
-      "name": "notificationT",
+    "public.notification": {
+      "name": "notification",
       "schema": "",
       "columns": {
         "id": {
@@ -320,6 +320,12 @@
         },
         "user_id": {
           "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lapangan_id": {
+          "name": "lapangan_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -348,12 +354,25 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "notificationT_user_id_user_id_fk": {
-          "name": "notificationT_user_id_user_id_fk",
-          "tableFrom": "notificationT",
+        "notification_user_id_user_id_fk": {
+          "name": "notification_user_id_user_id_fk",
+          "tableFrom": "notification",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_lapangan_id_lapangan_id_fk": {
+          "name": "notification_lapangan_id_lapangan_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "lapangan",
+          "columnsFrom": [
+            "lapangan_id"
           ],
           "columnsTo": [
             "id"

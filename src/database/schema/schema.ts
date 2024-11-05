@@ -17,13 +17,14 @@ export const userTable = pgTable("user", {
 export const userRelations = relations(userTable, ({ one, many }) => ({
     profileInfo: one(profileInfoTable),
     lapangan: many(lapanganTable),
-    orders: many(ordersTable)
+    orders: many(ordersTable),
+    notification: many(notificationTable)
 }))
 
 export const profileInfoTable = pgTable("profile_info", {
     id: uuid("id").defaultRandom().primaryKey(),
     picture: text('picture'),
-    bio: varchar('bio', { length: 256 }).notNull(),
+    bio: varchar('bio', { length: 512 }).default(""),
     userId: uuid("user_id").notNull().references(() => userTable.id),
 })
 
@@ -39,13 +40,17 @@ export interface Address {
     mapUrl: string;
 }
 
+export interface Picture {
+    picture: string;
+}
+
 export const lapanganTable = pgTable("lapangan", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
-    picture: text("picture").default(""),
+    picture: varchar("picture").default("").notNull(),
     description: text("description").default(""),
-    address: json("address").notNull().$type<Address>(),
-    liked: integer("liked").default(0).notNull(),
+    alamat: varchar("alamat", { length: 512 }).notNull(),
+    mapUrl: varchar("mapUrl"),
     open: text("open").notNull(),
     close: text("close").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -58,6 +63,7 @@ export const lapanganRelations = relations(lapanganTable, ({ one, many }) => ({
         fields: [lapanganTable.userId],
         references: [userTable.id]
     }),
+    gallery: many(galleryTable),
     orders: many(ordersTable),
     detailsLapangan: many(detailsLapanganTable),
 }))
@@ -68,11 +74,13 @@ interface Jam {
     close: string;
 }
 
+
 export const statusLapanganEnum = pgEnum("statusLapangan", ["Indoor", "Outdoor"])
 export const detailsLapanganTable = pgTable("details_lapangan", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     type: varchar("type", { length: 256 }).notNull(),
+    picture: varchar("picture").default("").notNull(),
     statusLapangan: statusLapanganEnum('statusLapangan').default("Indoor").notNull(),
     description: text("description").default(""),
     price: serial("price").notNull(),
@@ -85,23 +93,21 @@ export const detailsLapanganRelations = relations(detailsLapanganTable, ({ one, 
         fields: [detailsLapanganTable.lapanganId],
         references: [lapanganTable.id]
     }),
-    detailOrder: many(detailOrderTable),
-    gallery: many(galleryTable)
+    detailOrder: many(detailOrderTable)
 }))
 
 export const galleryTable = pgTable("gallery", {
-    id: serial("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     lapanganId: uuid("lapangan_id").notNull().references(() => lapanganTable.id),
-    detailsLapanganId: integer("details_lapangan_id").notNull().references(() => detailsLapanganTable.id),
     filename: varchar("filename", { length: 256 }).notNull(),
     mimeType: varchar("mime_type", { length: 256 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
 export const galleryTableRelations = relations(galleryTable, ({ one }) => ({
-    detailsLapangan: one(detailsLapanganTable, {
-        fields: [galleryTable.detailsLapanganId],
-        references: [detailsLapanganTable.id]
+    lapangan: one(lapanganTable, {
+        fields: [galleryTable.lapanganId],
+        references: [lapanganTable.id]
     })
 }))
 
@@ -112,6 +118,7 @@ export const ordersTable = pgTable("orders", {
     playStatus: boolean("play_status").default(false).notNull(),
     orderStatus: boolean("order_status").default(true).notNull(),
     statusPembayaran: boolean("status_pembayaran").default(false).notNull(),
+    date: date("date").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow(),
 })
@@ -147,7 +154,23 @@ export const detailOrderRelations = relations(detailOrderTable, ({ one }) => ({
     })
 }))
 
-export const notification = pgTable("notification", {
+export const notificationEnum = pgEnum("title", ["info", "warning", "error", "success", "default"])
+export const notificationTable = pgTable("notification", {
     id: uuid("id").defaultRandom().primaryKey(),
-    
+    userId: uuid("user_id").notNull().references(() => userTable.id),
+    lapanganId: uuid("lapangan_id").notNull().references(() => lapanganTable.id),
+    title: notificationEnum('title').default("info").notNull(),
+    description: text("description").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
 })
+
+export const notificationRelations = relations(notificationTable, ({ one }) => ({
+    user: one(userTable, {
+        fields: [notificationTable.userId],
+        references: [userTable.id]
+    }),
+    lapangan: one(lapanganTable, {
+        fields: [notificationTable.lapanganId],
+        references: [lapanganTable.id]
+    })
+}))

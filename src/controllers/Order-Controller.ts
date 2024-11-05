@@ -1,5 +1,5 @@
 import { database } from "../database/database";
-import { detailOrderTable, detailsLapanganTable, lapanganTable, ordersTable, userTable } from "../database/schema/schema";
+import { detailOrderTable, detailsLapanganTable, lapanganTable, notificationTable, ordersTable, userTable } from "../database/schema/schema";
 import { OrderValidation } from "../validation/order-validation";
 import { Validation } from "../validation/validation";
 import { and, eq, getTableColumns, isNotNull, or } from "drizzle-orm";
@@ -21,8 +21,6 @@ class OrderController {
 
         if (status === "Belum Bayar") {
             statusOrder.bayar = false
-        } else if (status === "Sudah Bayar") {
-            statusOrder.bayar = true
         } else if (status === "Dibatalkan") {
             statusOrder.play = false
             statusOrder.order = false
@@ -50,6 +48,7 @@ class OrderController {
             }
         }
 
+
         type Query = {
             page: number,
             limit: number
@@ -57,29 +56,36 @@ class OrderController {
 
         const { page, limit }: Query | any = context.req.query()
 
-        const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 5)
-
-        console.log(statusOrder, context.req.query());
+        const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
+        const date = new Date()
+        date.setDate(date.getDate() + 1)
 
         const orders = await database.query.ordersTable.findMany({
             where: and(
                 context.req.query("id") != undefined ? eq(ordersTable.lapanganId, context.req.query("id") as any) : eq(ordersTable.userId, context.get("jwt").id),
+                context.get("jwt").role === "provider" ? eq(ordersTable.date, date.toJSON().split("T")[0]) : true as any,
 
                 statusOrder.order != null ? and(
-                    eq(ordersTable.playStatus, statusOrder.play) || true,
-                    eq(ordersTable.orderStatus, statusOrder.order) || true,
-                    eq(ordersTable.statusPembayaran, statusOrder.bayar) || true,
-                ) : role === "provider" ? eq(ordersTable.statusPembayaran, true) : isNotNull(ordersTable.statusPembayaran)
+                    eq(ordersTable.playStatus, statusOrder.play),
+                    eq(ordersTable.orderStatus, statusOrder.order),
+                    eq(ordersTable.statusPembayaran, statusOrder.bayar),
+                ) : role === "provider" ? and(
+                    eq(ordersTable.statusPembayaran, true),
+                ) : isNotNull(ordersTable.orderStatus),
+
             ),
 
             offset: skip,
-            limit: limit || 5,
+            limit: limit || 10,
             with: {
                 detailOrder: true
             }
         })
 
+
+
         if (!orders) throw new HTTPException(404, { message: "Orders not found" })
+
 
 
         const totalItem = (await database.query.ordersTable.findMany()).length
@@ -87,47 +93,16 @@ class OrderController {
         const nextPage: boolean = (page * limit) < totalItem
 
         if (role === "provider") {
-            const ordersData = await database.query.ordersTable.findMany({
-                where: and(
-                    eq(ordersTable.lapanganId, context.req.query("id") as any),
-                    eq(ordersTable.statusPembayaran, true),
-                ),
-                with: {
-                    detailOrder: {
-                        columns: {
-                            jam: true,
-                        }
-                    },
-                    lapangan: {
-                        with: {
-                            detailsLapangan: true
-                        }
-                    }
-                }
-            })
-
-            const income = ordersData.map((item) => {
-                const price = item.lapangan.detailsLapangan.find((detail) => detail.lapanganId === item.lapanganId)?.price
-                return item.detailOrder?.jam.length! * price!
-            })
-
-
-            const stat = {
-                totalOrder: ordersData.length,
-                confirmed: ordersData.filter((item) => { return item.playStatus === true && item.orderStatus === false || item.playStatus === false && item.orderStatus === false }).length,
-                income: income.reduce((a, b) => a + b, 0)
-            }
 
             return context.json({
                 message: "Success get orders",
                 data: {
                     count: totalItem,
                     page: +page || 1,
-                    totalPage: Math.ceil(totalItem / (limit || 5)) || 0,
+                    totalPage: Math.ceil(totalItem / (limit || 10)) || 0,
                     prevPage: prevPage,
                     nextPage: nextPage,
                     order: orders,
-                    stat
                 }
             }, 200)
 
@@ -137,7 +112,7 @@ class OrderController {
                 data: {
                     count: totalItem,
                     page: +page || 1,
-                    totalPage: Math.ceil(totalItem / (limit || 5)) || 0,
+                    totalPage: Math.ceil(totalItem / (limit || 10)) || 0,
                     prevPage: prevPage,
                     nextPage: nextPage,
                     order: orders,
@@ -148,10 +123,15 @@ class OrderController {
     }
 
     async Stat(context: Context) {
+        const date = new Date()
+        date.setDate(date.getDate() + 1)
+
         const orders = await database.query.ordersTable.findMany({
             where: and(
                 eq(ordersTable.lapanganId, context.req.param("id")),
                 eq(ordersTable.statusPembayaran, true),
+                eq(ordersTable.date, date.toJSON().split("T")[0])
+
             ),
             with: {
                 detailOrder: {
@@ -185,12 +165,102 @@ class OrderController {
         }, 200)
     }
 
+    async History(context: Context) {
+
+        let status = context.req.query("status")
+        const role = context.get("jwt").role
+
+        let statusOrder = {
+            play: false,
+            order: true,
+            bayar: false
+        }
+
+        if (status === "Dibatalkan") {
+            statusOrder.play = false
+            statusOrder.order = false
+            statusOrder.bayar = false
+        } else if (status === "Selesai") {
+            statusOrder.play = false
+            statusOrder.order = false
+            statusOrder.bayar = true
+        } else {
+            statusOrder.play = false as any
+            statusOrder.order = false as any
+            statusOrder.bayar = null as any
+
+        }
+
+
+        type Query = {
+            page: number,
+            limit: number
+        }
+
+        const { page, limit }: Query | any = context.req.query()
+
+
+        const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 5)
+
+        const orderHistory = await database.query.ordersTable.findMany({
+            where: and(
+                eq(ordersTable.lapanganId, context.req.param("id") as any),
+                statusOrder.bayar != null ? and(
+                    eq(ordersTable.playStatus, statusOrder.play),
+                    eq(ordersTable.orderStatus, statusOrder.order),
+                    eq(ordersTable.statusPembayaran, statusOrder.bayar),
+                ) : and(
+                    eq(ordersTable.playStatus, false),
+                    eq(ordersTable.orderStatus, false),
+                    isNotNull(ordersTable.statusPembayaran)
+                ),
+
+            ),
+            with: {
+                detailOrder: true
+            },
+            offset: skip,
+            limit: limit || 10,
+        })
+
+        const totalItem = await database.query.ordersTable.findMany({
+            where: and(
+                eq(ordersTable.lapanganId, context.req.param("id") as any),
+                and(
+                    eq(ordersTable.playStatus, false),
+                    eq(ordersTable.orderStatus, false),
+                    or(
+                        eq(ordersTable.statusPembayaran, false),
+                        eq(ordersTable.statusPembayaran, true)
+                    )
+                ),
+            ),
+        })
+
+        const prevPage: boolean = skip > 1 ? true : false
+        const nextPage: boolean = (page * limit) < totalItem.length
+
+
+        return context.json({
+            message: "Success get history orders",
+            data: {
+                count: totalItem.length,
+                page: +page || 1,
+                totalPage: Math.ceil(totalItem.length / (limit || 10)) || 0,
+                prevPage: prevPage,
+                nextPage: nextPage,
+                order: orderHistory,
+            }
+        }, 200)
+
+    }
+
     async Detail(context: Context) {
 
         const order = await database.query.ordersTable.findFirst({
-            where: or(
-                eq(ordersTable.userId, context.get("jwt").id),
-                eq(ordersTable.id, context.req.param("id") as any)
+            where: and(
+                // eq(ordersTable.userId, await context.get("jwt").id),
+                eq(ordersTable.id, await context.req.param("id") as any)
             ),
             with: {
                 detailOrder: true
@@ -198,10 +268,11 @@ class OrderController {
         })
         if (!order) throw new HTTPException(404, { message: "Order not found" })
 
-        const findeDetailLapangan = await database.query.detailsLapanganTable.findFirst({
+        const findDetailLapangan = await database.query.detailsLapanganTable.findFirst({
             where: eq(detailsLapanganTable.id, order.detailOrder?.detailsLapanganId as any)
         })
-        if (!findeDetailLapangan) throw new HTTPException(404, { message: "Lapangan not found" })
+        if (!findDetailLapangan) throw new HTTPException(404, { message: "Lapangan not found" })
+
 
         return context.json(
             {
@@ -212,10 +283,10 @@ class OrderController {
                     statusOrder: order.orderStatus,
                     statusPembayaran: order.statusPembayaran,
                     tanggalBermain: order.detailOrder?.date as string,
-                    price: findeDetailLapangan?.price as number,
+                    price: findDetailLapangan?.price as number,
                     lamaBermain: order.detailOrder?.jam.length,
                     jam: order.detailOrder?.jam,
-                    total: order.detailOrder?.jam.length! * findeDetailLapangan?.price! as number,
+                    total: order.detailOrder?.jam.length! * findDetailLapangan?.price! as number,
                     tanggalOrder: order.createdAt.toLocaleString()
                 }
             }
@@ -237,6 +308,7 @@ class OrderController {
         })
         if (!findOrder) throw new HTTPException(404, { message: "Order not found" })
 
+        
 
         const findLapangan = await database.query.lapanganTable.findFirst({
             where: eq(lapanganTable.id, context.req.param("lapanganId") as any),
@@ -256,6 +328,8 @@ class OrderController {
             open: string;
             close: string;
         }
+
+
         const compareJam = (array1: [], array2: []) => {
             return (
                 array1.every((item1: Item) => (
@@ -263,9 +337,14 @@ class OrderController {
                 ))
             )
         }
+        const date = new Date()
 
+        
         const checkJamOrder = await database.query.detailOrderTable.findMany({
-            where: eq(detailOrderTable.detailsLapanganId, context.req.param("id") as any),
+            where: and(
+                eq(detailOrderTable.detailsLapanganId, context.req.param("id") as any),
+                eq(detailOrderTable.date, date.toJSON().split("T")[0])
+            ),
             with: {
                 orders: {
                     columns: {
@@ -279,24 +358,27 @@ class OrderController {
         checkJamOrder.forEach((item) => {
 
             if (compareJam(findOrder.detailOrder?.jam as [], item.jam as []) && item.orders.statusPembayaran) {
-                throw new HTTPException(400, { message: "Jam sudah terbooking" })
+                throw new HTTPException(400, { message: "Jam sudah Terbooking" })
                 shouldBreak = true;
             }
+
+            if (date.getHours() >= parseInt(item.jam[0].open)) {
+                throw new HTTPException(400, { message: "Sudah melewati jam" })
+            }
+
             if (shouldBreak) {
                 return; // This will stop the iteration of the loop
             }
         });
-
-
 
         const snap = new MidtransClient.Snap({
             isProduction: false,
             clientKey: process.env.CLIENT_KEY,
             serverKey: process.env.SERVER_KEY
         })
-        console.log(findLapangan, findOrder, findLapanganTersedia, findUser);
 
         const token = await snap.createTransactionToken({
+
             item_details: {
                 name: findLapangan.name,
                 price: findLapanganTersedia.price,
@@ -319,7 +401,7 @@ class OrderController {
             token: token
         }
 
-        return context.json({ message: "Success order", data: result })
+        return context.json({ message: "Success order", data: result }, 201)
     }
 
     async Checkout(context: Context) {
@@ -333,9 +415,12 @@ class OrderController {
 
         const requestOrder = Validation.validate(OrderValidation.Checkout, merge)
 
-
+        const tanggal = new Date(requestOrder.date)
         const checkJamOrder = await database.query.detailOrderTable.findMany({
-            where: eq(detailOrderTable.detailsLapanganId, requestOrder.detailLapanganId),
+            where: and(
+                eq(detailOrderTable.detailsLapanganId, requestOrder.detailLapanganId),
+                eq(detailOrderTable.date, tanggal.toJSON().split("T")[0])
+            ),
             with: {
                 orders: {
                     columns: {
@@ -350,6 +435,9 @@ class OrderController {
             open: string;
             close: string;
         }
+        //Sorting jam
+        requestOrder.jam.sort((a: Item, b: Item) => a.id - b.id)
+
         const compareJam = (array1: [], array2: []) => {
             return (
                 array1.every((item1: Item) => (
@@ -358,10 +446,8 @@ class OrderController {
             )
         }
 
-
         let shouldBreak = false;
         checkJamOrder.forEach((item) => {
-            console.log(compareJam(requestOrder.jam, item.jam as []), item.orders);
 
             if (compareJam(requestOrder.jam, item.jam as []) && item.orders.statusPembayaran) {
                 throw new HTTPException(400, { message: "Jam sudah terbooking" })
@@ -372,9 +458,7 @@ class OrderController {
             }
         });
 
-
-        const date = new Date(`09/${requestOrder.date}/2024`)
-
+        const role = await context.get("jwt").role
 
         const data = await database.transaction(async () => {
 
@@ -384,13 +468,17 @@ class OrderController {
                 {
                     userId: context.get("jwt").id,
                     lapanganId: context.req.param("lapanganId") as any,
+                    date: tanggal.toLocaleDateString(),
+                    playStatus: role === "provider" ? false : false,
+                    orderStatus: role === "provider" ? true : true,
+                    statusPembayaran: role === "provider" ? true : false,
                 }
             ).returning()
 
             const detail = await database.insert(detailOrderTable).values({
                 orderId: result[0].id,
                 detailsLapanganId: requestOrder.detailLapanganId.toString(),
-                date: date.toLocaleDateString(),
+                date: tanggal.toLocaleDateString(),
                 jam: requestOrder.jam,
             }).returning()
 
@@ -405,7 +493,8 @@ class OrderController {
             }
         })
 
-        return context.json({ message: "Success order", data: data })
+        
+        return context.json({ message: "Success order", data: data }, 201)
 
     }
 
@@ -427,7 +516,7 @@ class OrderController {
                 eq(ordersTable.id, context.req.query("orderId") as any)
             )
         })
-        if (!findOrder) throw new HTTPException(404, { message: "Order not found" })
+        if (!findOrder) throw new HTTPException(404, { message: "Order not found" })        
 
         const order = await database.update(ordersTable).set({
             statusPembayaran: true,
@@ -439,6 +528,15 @@ class OrderController {
                 eq(ordersTable.id, context.req.query("orderId") as any)
             )
         ).returning()
+        
+        if(order) {
+            await database.insert(notificationTable).values({
+                title: "info",
+                userId: await context.get("jwt").id,
+                lapanganId: await context.req.param("lapanganId"),
+                description: ""
+            })
+        }
 
         return context.json({ message: "Success update status pembayaran", data: order })
 
@@ -489,7 +587,6 @@ class OrderController {
         }).where(
             eq(ordersTable.id, context.req.query("id") as any)
         ).returning()
-        console.log(order);
 
 
         return context.json({ message: "Success update play game", data: order })
@@ -524,6 +621,32 @@ class OrderController {
         ).returning()
 
         return context.json({ message: "Success update end game", data: order })
+    }
+
+    async UpdateOrderCancel(context: Context) {
+        const findOrder = await database.query.ordersTable.findFirst({
+            where: and(
+                eq(ordersTable.id, await context.req.param("id")),
+                eq(ordersTable.lapanganId, await context.req.param("lapanganId"))
+            )
+        })
+
+        if (!findOrder) throw new HTTPException(404, { message: "Order not found" })
+
+        const order = await database.update(ordersTable).set({
+            playStatus: false,
+            orderStatus: false,
+            statusPembayaran: false,
+        }).where(
+            and(
+                eq(ordersTable.id, await context.req.param("id")),
+                eq(ordersTable.lapanganId, await context.req.param("lapanganId"))
+            )
+        )
+        if (!order) throw new HTTPException(500, { message: "Failed to cancel" })
+
+        return context.json({ message: "Success cancel order", data: order })
+
     }
 
     async DeleteOrder(context: Context) {

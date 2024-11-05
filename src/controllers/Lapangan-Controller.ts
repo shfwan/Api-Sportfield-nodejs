@@ -5,6 +5,7 @@ import { Validation } from "../validation/validation"
 import { and, eq, getTableColumns, ilike, or } from "drizzle-orm"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
+import * as fs from "fs"
 
 
 class LapanganController {
@@ -24,11 +25,19 @@ class LapanganController {
             where: or(
                 ilike(lapanganTable.name, `%${context.req.query("value") || ""}%`)
             ),
+            with: {
+                detailsLapangan: {
+                    columns: {
+                        price: true,
+                        type: true
+                    }
+                }
+            },
             offset: skip,
             limit: limit || 10,
             columns: {
                 userId: false,
-                address: false,
+                mapUrl: false,
                 createdAt: false,
                 updatedAt: false
             }
@@ -41,7 +50,7 @@ class LapanganController {
         
         return context.json({
             message: "Success get lapangan",
-            data: {
+            data: { 
                 count: totalItem,
                 page: +page || 1,
                 totalPage: Math.ceil(totalItem / (limit || 10)) || 0,
@@ -69,11 +78,44 @@ class LapanganController {
         return context.json({ message: "Success get lapangan", data: lapangan })
     }
 
-    async createLapangan(context: Context) {
-        const requestLapangan = Validation.validate(LapanganValidation.Create, await context.req.json())
+    async createLapangan(context: Context) {        
+        const requestLapangan: any = Validation.validate(LapanganValidation.Create, await context.req.parseBody())
+        
+        const data  = await context.req.parseBody()
+        const file = data['picture'] as File
+        
+        
+        if(file) {
+            const newFile = { ...file, name: `${new Date().getTime()}.${file.type.split("/")[1]}` } as File
+    
+            const SIZE = 5 * 1024 * 1024
+            const FILETYPE = /png|jpeg|jpg/
+    
+            if (!FILETYPE.test(file.type)) {
+                throw new HTTPException(400, { message: "Invalid file, image only" })
+            }
+    
+            if (file.size > SIZE) {
+                throw new HTTPException(400, { message: "File to large" })
+            }
+    
+            const buffer = await file.arrayBuffer()
+            requestLapangan.picture = newFile.name
+            
+            fs.writeFile(`./public/images/upload/${newFile.name}`, Buffer.from(buffer), (err) => {
+                if(err) {
+                    throw new HTTPException(500, { message: "Failed upload" })
+                } else {
+                    requestLapangan.picture = newFile.name
+                }
+            })
+        }
 
-        requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
-        requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
+        const openSplit: any = requestLapangan.open
+        const closeSplit: any = requestLapangan.close
+        
+        requestLapangan.open = openSplit.split(":")[0] + ":" + "00"
+        requestLapangan.close = closeSplit.split(":")[0] + ":" + "00"        
         
         const { userId, ...omitId } = getTableColumns(lapanganTable)
 
@@ -81,10 +123,11 @@ class LapanganController {
             name: requestLapangan.name,
             picture: requestLapangan.picture,
             description: requestLapangan.description,
-            address: requestLapangan.address,
             open: requestLapangan.open,
             close: requestLapangan.close,
-            userId: await context.get("jwt").id
+            userId: await context.get("jwt").id,
+            mapUrl: requestLapangan.mapUrl,
+            alamat: requestLapangan.alamat,
         }).returning(omitId)
 
         return context.json({
