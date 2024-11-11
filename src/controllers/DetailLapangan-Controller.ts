@@ -167,9 +167,11 @@ class DetailsLapanganController {
         const body: any = await context.req.parseBody()
         body.price = parseInt(body.price)
 
-        
+
 
         const requestLapangan = Validation.validate(DetailsLapanganValidation.Update, body)
+
+        console.log("asda");
 
         requestLapangan.open = requestLapangan.open.split(":")[0] + ":" + "00"
         requestLapangan.close = requestLapangan.close.split(":")[0] + ":" + "00"
@@ -232,8 +234,9 @@ class DetailsLapanganController {
         const file = data['picture'] as File
 
 
-        if (file) {
+        if (file && file.type !== undefined) {            
             const newFile = { ...file, name: `${new Date().getTime()}.${file.type.split("/")[1]}` } as File
+            console.log("asasdasdda");
 
             const SIZE = 5 * 1024 * 1024
             const FILETYPE = /png|jpeg|jpg/

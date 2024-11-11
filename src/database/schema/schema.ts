@@ -119,6 +119,7 @@ export const ordersTable = pgTable("orders", {
     orderStatus: boolean("order_status").default(true).notNull(),
     statusPembayaran: boolean("status_pembayaran").default(false).notNull(),
     date: date("date").notNull(),
+    snapToken: text("snap_token"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow(),
 })

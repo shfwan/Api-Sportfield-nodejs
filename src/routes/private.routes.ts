@@ -9,6 +9,7 @@ import JamController from "../controllers/Jam-Controller";
 import GalleryController from "../controllers/Gallery-Controller";
 import OrderController from "../controllers/Order-Controller";
 import NotificationController from "../controllers/NotificationController";
+import TransactionController from "../controllers/TransactionController";
 
 export const privateRoute = new Hono()
 
@@ -50,12 +51,13 @@ privateRoute.get("/order/:id", Auth, OrderController.Detail)
 privateRoute.get("/order/:id/stat", Auth, OrderController.Stat)
 privateRoute.get("/order/:id/history", Auth, OrderController.History)
 
-privateRoute.post("/order/lapangan/:lapanganId/information/:id/checkout", Auth, OrderController.Checkout)
-privateRoute.post("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.Pembayaran)
-
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/cancel", Auth, OrderController.UpdateOrderCancel)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/pembayaran", Auth, OrderController.UpdateStatusPembayaran)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/play", Auth, OrderController.UpdateOrderPlay)
 privateRoute.patch("/order/lapangan/:lapanganId/information/:id/end", Auth, OrderController.UpdateOrderEnd)
 
 privateRoute.delete("/order/:id", Auth, OrderController.DeleteOrder)
+
+// Transaction
+privateRoute.post("/order/lapangan/:lapanganId/transaction/:id/checkout", Auth, TransactionController.Checkout)
+privateRoute.post("/order/lapangan/:lapanganId/transaction/:id/pembayaran", Auth, TransactionController.Pembayaran)

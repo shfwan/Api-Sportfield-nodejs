@@ -89,7 +89,7 @@ class JamController {
             })
 
             return values
-        })
+        })        
 
         return context.json(
             {
