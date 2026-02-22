@@ -62,20 +62,17 @@ class LapanganController {
     }
 
     async getLapanganById(context: Context) {
-        
-        const lapangan = await database.query.lapanganTable.findFirst({
-            where: or(
-                eq(lapanganTable.id, context.req.param("id")),
-                eq(lapanganTable.userId, context.req.param("id"))
-            ),
+
+        const lapangan = await database.query.lapanganTable.findMany({
             columns: {
-                userId: false,
-            },
+                userId: false
+            }
         })
 
-        if (!lapangan) throw new HTTPException(404, { message: "Lapangan not found" })
+        if (lapangan.length < 1) throw new HTTPException(404, { message: "Lapangan not found" })
+        
 
-        return context.json({ message: "Success get lapangan", data: lapangan })
+        return context.json({ message: "Success get lapangan", data: lapangan[0] })
     }
 
     async createLapangan(context: Context) {        

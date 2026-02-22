@@ -1,8 +1,6 @@
 import { database } from "../database/database";
-import { detailOrderTable, detailsLapanganTable, lapanganTable, notificationTable, ordersTable, userTable } from "../database/schema/schema";
-import { OrderValidation } from "../validation/order-validation";
-import { Validation } from "../validation/validation";
-import { and, eq, getTableColumns, isNotNull, or } from "drizzle-orm";
+import { detailOrderTable, detailsLapanganTable, notificationTable, ordersTable } from "../database/schema/schema";
+import { and, eq, isNotNull, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { MidtransClient } from "midtrans-node-client";
@@ -58,7 +56,10 @@ class OrderController {
 
         const skip: number = ((page < 1 ? 1 : page) - 1) * (limit || 10)
         const date = new Date()
-        date.setDate(date.getDate() + 1)
+        date.setDate(date.getDate())    
+        
+        console.log(date.toJSON().split("T")[0]);
+        
 
         const orders = await database.query.ordersTable.findMany({
             where: and(
@@ -124,7 +125,7 @@ class OrderController {
 
     async Stat(context: Context) {
         const date = new Date()
-        date.setDate(date.getDate() + 1)
+        date.setDate(date.getDate())
 
         const orders = await database.query.ordersTable.findMany({
             where: and(

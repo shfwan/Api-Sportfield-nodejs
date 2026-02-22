@@ -180,6 +180,41 @@ class TransactionController {
         })
         if (!findUser) throw new HTTPException(404, { message: "User not found" })
 
+        const lapangan = await database.query.detailsLapanganTable.findFirst({ where: eq(detailsLapanganTable.id, requestOrder.detailLapanganId) })
+        const user = await database.query.userTable.findFirst({ where: eq(userTable.id, context.get("jwt").id) })
+
+
+
+
+        const snap = new MidtransClient.Snap({
+            isProduction: false,
+            clientKey: process.env.CLIENT_KEY,
+            serverKey: process.env.SERVER_KEY
+        })
+
+        const token = await snap.createTransactionToken({
+
+            item_details: {
+                name: lapangan?.name,
+                price: lapangan?.price,
+                quantity: requestOrder.jam.length,
+                category: lapangan?.type
+            },
+            transaction_details: {
+                order_id: Math.random(),
+                gross_amount: lapangan?.price! * requestOrder.jam.length
+            },
+            customer_details: {
+                first_name: findUser?.firstname,
+                last_name: findUser?.lastname,
+                email: findUser?.email,
+                phone: findUser?.phone
+            },
+        })
+
+        if(!token) throw new HTTPException(500, {message: "Gagal checkout"})
+
+
         const data = await database.transaction(async () => {
 
             // const {id, orderId, detailsLapanganId, ...omit} = getTableColumns(detailOrderTable)
@@ -192,6 +227,7 @@ class TransactionController {
                     playStatus: role === "provider" ? false : false,
                     orderStatus: role === "provider" ? true : true,
                     statusPembayaran: role === "provider" ? true : false,
+                    snapToken: token
                 }
             ).returning()
 
@@ -202,8 +238,6 @@ class TransactionController {
                 jam: requestOrder.jam,
             }).returning()
 
-            const lapangan = await database.query.detailsLapanganTable.findFirst({ where: eq(detailsLapanganTable.id, requestOrder.detailLapanganId) })
-            const user = await database.query.userTable.findFirst({ where: eq(userTable.id, context.get("jwt").id) })
 
             return {
                 order: result[0],
@@ -212,38 +246,6 @@ class TransactionController {
                 user: user
             }
         })
-
-        const snap = new MidtransClient.Snap({
-            isProduction: false,
-            clientKey: process.env.CLIENT_KEY,
-            serverKey: process.env.SERVER_KEY
-        })
-
-        const token = await snap.createTransactionToken({
-
-            item_details: {
-                name: data.lapangan?.name,
-                price: data.lapangan?.price,
-                quantity: data.detailOrder.jam.length,
-                category: data.lapangan?.type
-            },
-            transaction_details: {
-                order_id: data.order.id,
-                gross_amount: data.lapangan?.price! * data.detailOrder.jam.length
-            },
-            customer_details: {
-                first_name: findUser?.firstname,
-                last_name: findUser?.lastname,
-                email: findUser?.email,
-                phone: findUser?.phone
-            },
-        })
-
-        if(token) {
-            await database.update(ordersTable).set({
-                snapToken: token
-            })
-        }
 
         return context.json({ message: "Success order", data: data }, 201)
 

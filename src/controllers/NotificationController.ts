@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 
 class NotificationController {
     async getNotifcation(context: Context) {
+        const date = new Date()
         const notification = await database.query.notificationTable.findMany({
             with: {
                 user: {
@@ -22,9 +23,14 @@ class NotificationController {
                         }
                     }
                 }
-            }
+            },
+            
+            // where: eq(notificationTable.createdAt)
             // where: eq(notificationTable.userId,  context.get("jwt").id)
         })
+
+        console.log(notification[0].createdAt);
+        
 
         return context.json({
             message: "Success get Notification",
